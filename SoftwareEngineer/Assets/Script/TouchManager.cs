@@ -21,101 +21,106 @@ public class TouchManager : MonoBehaviour
     private Vector2 fp;
     private Vector2 lp;
     public Vector2 jump;
-
+    private bool gamedone = false;
+    private Color alpha;
     void Start()
     {
 
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody2D>();
         sp = GetComponent<SpriteRenderer>();
+        alpha = sp.color;
         game = FindObjectOfType<GameManager>();
         drag_distance = Screen.width * 10 / 200;
     }
 
     void Update()
     {
-
-        if (Input.touchCount == 1)
+        if (!gamedone)
         {
-            Touch touch = Input.GetTouch(0);
-            if (touch.phase == TouchPhase.Began)
+            if (Input.touchCount == 1)
             {
-                fp = touch.position;
-                lp = touch.position;
-            }
-            else if (touch.phase == TouchPhase.Moved)
-            {
-                lp = touch.position;
-            }
-            else if (touch.phase == TouchPhase.Ended)
-            {
-                lp = touch.position;
-                if (Mathf.Abs(lp.x - fp.x) > drag_distance || Mathf.Abs(lp.y - fp.y) > drag_distance)
+                Touch touch = Input.GetTouch(0);
+                if (touch.phase == TouchPhase.Began)
                 {
-
-                    //drag
-                    if (Mathf.Abs(lp.x - fp.x) > Mathf.Abs(lp.y - fp.y))
+                    fp = touch.position;
+                    lp = touch.position;
+                }
+                else if (touch.phase == TouchPhase.Moved)
+                {
+                    lp = touch.position;
+                }
+                else if (touch.phase == TouchPhase.Ended)
+                {
+                    lp = touch.position;
+                    if (Mathf.Abs(lp.x - fp.x) > drag_distance || Mathf.Abs(lp.y - fp.y) > drag_distance)
                     {
-                        //swip horizontal
-                        if (lp.x > fp.x)
+
+                        //drag
+                        if (Mathf.Abs(lp.x - fp.x) > Mathf.Abs(lp.y - fp.y))
                         {
-                            walking = true;
-                            walkingl = false;
-                         
+                            //swip horizontal
+                            if (lp.x > fp.x)
+                            {
+                                walking = true;
+                                walkingl = false;
+
+                            }
+                            else
+                            {
+                                walking = false;
+                                walkingl = true;
+
+                            }
                         }
-                        else
+                        else if (lp.y > fp.y)
                         {
-                            walking = false;
-                            walkingl = true;
-                       
+                            if (ground)
+                            {
+                                rb.velocity = new Vector3(0f, jumpforce, 0f);
+
+                            }
                         }
                     }
-                    else if (lp.y > fp.y)
+                    else
                     {
-                        if (ground)
-                        {
-                            rb.velocity = new Vector3(0f, jumpforce, 0f);
-                      
-                        }
+                        stop();
                     }
                 }
-                else
-                {
-    
+            }
 
-                    stop();
+            if (walking || walkingl)
+            {
+                if (walking && !walkingl)
+                {
+                    transform.Translate(movespeed * Time.deltaTime, 0, 0);
+                    sp.flipX = true;
+                    anim.SetBool("Walking", true);
+
+                }
+                else if (walkingl && !walking)
+                {
+                    anim.SetBool("Walking", true);
+                    transform.Translate(-movespeed * Time.deltaTime, 0, 0);
+                    sp.flipX = false;
+
+                }
+
+                if (ground && walk.isPlaying == false)
+                {
+                    walk.Play();
+
+                }
+                else if (!ground && walk.isPlaying == true)
+                {
+                    walk.Stop();
                 }
 
             }
-
-
         }
-        if (walking || walkingl)
-        {
-            if (walking && !walkingl)
-            {
-                transform.Translate(movespeed * Time.deltaTime, 0, 0);
-                sp.flipX = true;
-                anim.SetBool("Walking", true);
-
-            }
-            else if (walkingl && !walking)
-            {
-                anim.SetBool("Walking", true);
-                transform.Translate(-movespeed * Time.deltaTime, 0, 0);
-                sp.flipX = false;
-
-            }
-
-            if (ground && walk.isPlaying == false)
-            {
-                walk.Play();
-       
-            }
-            else if(!ground && walk.isPlaying == true){
-                walk.Stop();
-            }
-    
+        else {
+            alpha.a = alpha.a - .5f * Time.deltaTime;
+            sp.color = alpha;
         }
     }
 
@@ -174,13 +179,18 @@ public class TouchManager : MonoBehaviour
     {
         if (collision.gameObject.tag == "checkpoint")
         {
-
-            game.Win();
-            Destroy(this.gameObject);
+            StartCoroutine(win());
         }
         else if (collision.gameObject.tag == "killzone") {
             game.death();
             Destroy(this.gameObject);
         }
+    }
+
+    IEnumerator win(){
+        stop();
+        gamedone = true;
+        yield return new WaitForSeconds(2f);
+        game.Win();
     }
 }

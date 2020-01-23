@@ -10,8 +10,13 @@ public class GameManager : MonoBehaviour {
     public GameObject winmenu;
     public GameObject layover;
     public Image timer;
+    public byte R;
+    public byte G;
+    public byte B;
     public float waittime = 30.0f;
     private bool timeup = false;
+    private bool courrunning = false;
+
 
     private void Start()
     {
@@ -23,6 +28,10 @@ public class GameManager : MonoBehaviour {
         if (!timeup)
         {
             timer.fillAmount -= 1.0f / waittime * Time.deltaTime;
+            if (timer.fillAmount <.35f && !courrunning) {
+                StartCoroutine(changeing());
+                courrunning = true;
+            }
             if (timer.fillAmount == 0)
             {
                 timeup = true;
@@ -37,7 +46,7 @@ public class GameManager : MonoBehaviour {
         SceneManager.LoadScene(number);
     }
 
-    
+
 
     public void death() {
         Time.timeScale = 0f;
@@ -45,7 +54,7 @@ public class GameManager : MonoBehaviour {
         {
             FindObjectOfType<TouchManager>().gameObject.SetActive(false);
         }
-        else if(FindObjectOfType<ReverseTouchManager>() != null){
+        else if (FindObjectOfType<ReverseTouchManager>() != null) {
             FindObjectOfType<ReverseTouchManager>().gameObject.SetActive(false);
         }
         layover.SetActive(true);
@@ -56,6 +65,16 @@ public class GameManager : MonoBehaviour {
         Time.timeScale = 0f;
         layover.SetActive(true);
         winmenu.SetActive(true);
+    }
+
+    IEnumerator changeing(){
+        do
+        {
+            timer.color = new Color32(R,G,B,255);
+            yield return new WaitForSeconds(.5f);
+            timer.color = Color.white;
+            yield return new WaitForSeconds(.5f);
+        } while (true);
     }
 
 }
